@@ -1,0 +1,97 @@
+yaml
+name: collect & deploy
+
+# cron은 UTC 기준이다.
+#   09:00 UTC = KST 18:00  국내 마감 후
+#   22:00 UTC = KST 07:00  미국 마감 후
+on:
+  schedule:
+    - cron: "0 9 * * 1-5"
+    - cron: "0 22 * * 1-5"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      demo:
+        description: "실제 시세 없이 데모 데이터로 배포 (첫 배포 확인용)"
+        type: boolean
+        default: false
+      refresh_bt:
+        description: "패턴 성적표 다시 계산 (2~3분 추가)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치지 않도록. 진행 중인 건 끝까지 보낸다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60   # 첫 수집은 오래 걸린다. 이후 회차는 증분이라 몇 분이면 끝난다.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # 일봉 캐시와 성적표는 저장소에 커밋하지 않고 캐시에 둔다.
+      # 커밋하면 매일 수백 개 parquet 이 바뀌면서 저장소가 계속 불어난다.
+      - uses: actions/cache@v4
+        with:
+          path: data
+          key: chartdogam-data-${{ github.run_id }}
+          restore-keys: chartdogam-data-
+
+      - name: 로직 검증 (네트워크 불필요)
+        run: python tests/test_offline.py
+
+      - name: 소스 생존 점검
+        id: probe
+        run: python collect.py --probe
+        continue-on-error: true
+
+      - name: 수집 · 스캔
+        env:
+          DEMO: ${{ inputs.demo }}
+          PROBE: ${{ steps.probe.outcome }}
+          BT: ${{ inputs.refresh_bt && '--refresh-bt' || '' }}
+          # 없으면 지표 영역이 화면에서 조용히 빠진다 (지어내지 않는다)
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          ECOS_API_KEY: ${{ secrets.ECOS_API_KEY }}
+        run: |
+          set -e
+          if [ "$DEMO" = "true" ] || [ "$PROBE" = "failure" ]; then
+            echo "::notice::데모 데이터로 빌드합니다 (demo=$DEMO, probe=$PROBE)"
+            python scan.py $BT
+          else
+            python collect.py
+            python scan.py --real $BT
+          fi
+          python build_app.py
+
+      # 배포되는 것은 public/ 뿐이다. 저장소에 되돌려 커밋할 것이 없다.
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
