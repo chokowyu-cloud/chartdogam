@@ -1,0 +1,21 @@
+name = "chartdogam-quote"
+main = "index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# 내 페이지 주소만 허용한다. "*" 로 두면 누구나 내 중계 서버를 쓸 수 있고,
+# 그만큼 내 증권사 호출 한도가 남에게 소진된다.
+ALLOW_ORIGIN = "https://내아이디.github.io"
+
+# 미국 시세를 KIS 해외주식으로 받을 때만 "1" 로. 기본은 Finnhub 사용.
+KIS_OVERSEAS = "0"
+KIS_EXCD = "NAS"
+
+# Finnhub 무료 티어가 지연 데이터라면 0 그대로 두세요.
+# 실시간 플랜이면 "1" 로 바꾸면 화면에서 '지연' 표시가 사라집니다.
+FINNHUB_REALTIME = "0"
+
+# ── 비밀값은 여기 적지 않습니다. 아래 명령으로 따로 넣습니다.
+#    npx wrangler secret put KIS_APP_KEY
+#    npx wrangler secret put KIS_APP_SECRET
+#    npx wrangler secret put FINNHUB_KEY

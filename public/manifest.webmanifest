@@ -1,0 +1,17 @@
+{
+  "name": "차트도감 — 주식 차트 패턴 스크리너",
+  "short_name": "차트도감",
+  "description": "한국·미국 주식을 차트 패턴과 카테고리로 훑어 보는 스크리너. 매매를 권유하지 않는 정보 도구입니다.",
+  "lang": "ko",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F4F6",
+  "theme_color": "#161A20",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "_note": "D-day로 표시할 일정. 연초에 한 번 채워두면 API 없이 동작한다. 지난 일정은 자동으로 숨겨진다.",
+  "_sources": {
+    "FOMC": "federalreserve.gov 에 연간 일정이 미리 공개된다",
+    "금통위": "한국은행 > 통화정책방향 결정회의 일정 (2026년은 1·2·4·5·7·8·10·11월 8회)",
+    "미 CPI": "bls.gov 의 CPI Release Schedule"
+  },
+  "events": [
+    { "label": "FOMC", "date": "2026-09-16" },
+    { "label": "FOMC", "date": "2026-10-28" },
+    { "label": "FOMC", "date": "2026-12-09" }
+  ]
+}
