@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import pathlib
-import shutil
 
 import console
 
@@ -77,7 +76,6 @@ def main() -> int:
     # --- 미리보기용: 단일 파일 (아티팩트는 외부 fetch가 막혀 있다)
     safe = raw.replace("</", "<\\/")   # </script> 로 조기 종료되는 것 방지
     (ROOT / "chartdogam-app.html").write_text(tpl.replace("__DATA__", safe), encoding="utf-8")
-   
 
     d = json.loads(raw)
     idx = PUBLIC / "index.html"

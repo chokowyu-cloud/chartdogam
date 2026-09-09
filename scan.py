@@ -138,15 +138,26 @@ def load_real():
 
 
 # ------------------------------------------------------------------ 스캔
-def load_or_run_backtest(enriched: dict, refresh: bool) -> dict:
-    """성적표는 무거우니 캐시한다. 패턴 로직을 고치면 --refresh-bt 로 다시 돌린다."""
+def load_or_run_backtest(enriched: dict, refresh: bool, demo: bool) -> dict:
+    """성적표는 무거우니 캐시한다. 패턴 로직을 고치면 --refresh-bt 로 다시 돌린다.
+
+    단, 데모로 계산한 성적표를 실제 시세 화면에 얹으면 안 된다. 지어낸 승률이
+    진짜인 척 붙어버린다. 그래서 캐시에 어느 쪽으로 계산했는지를 같이 적어두고,
+    다르면 캐시를 무시하고 다시 계산한다."""
     import backtest
     cache = Path("data/backtest.json")
     if cache.exists() and not refresh:
-        print("성적표: 캐시 사용 (data/backtest.json)")
-        return json.loads(cache.read_text(encoding="utf-8"))
+        cached = json.loads(cache.read_text(encoding="utf-8"))
+        if cached.get("_demo") == demo:
+            print("성적표: 캐시 사용 (data/backtest.json)")
+            return cached
+        was = "데모" if cached.get("_demo") else "실제 시세"
+        now = "데모" if demo else "실제 시세"
+        print(f"성적표: 캐시가 {was}로 계산된 것이라 버립니다 (지금은 {now})")
+
     print("성적표 계산 중 — 기간 3종 워크포워드, 2~3분 걸립니다")
     bt = backtest.run_all(enriched, verbose=True)
+    bt["_demo"] = demo
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(bt, ensure_ascii=False), encoding="utf-8")
     return bt
@@ -300,7 +311,7 @@ def main() -> int:
     print(f"스캔 대상 {len(data)}종목")
 
     enriched = {c: {**v, "d": ind.enrich(v["df"])} for c, v in data.items()}
-    bt = None if args.no_bt else load_or_run_backtest(enriched, args.refresh_bt)
+    bt = None if args.no_bt else load_or_run_backtest(enriched, args.refresh_bt, demo=not args.real)
 
     result = run(data, demo=not args.real, backtest_data=bt, enriched=enriched)
 

@@ -85,18 +85,26 @@ class SeedListSource(DataSource):
     """
 
     name = "seed"
-    markets = frozenset({"US"})
+    markets = frozenset({"US", "KR"})
 
     def get_universe(self, market: str) -> pd.DataFrame:
-        if market != "US" or not config.SEED_SP500.exists():
-            raise SourceError("번들 리스트 없음")
-        df = pd.read_csv(config.SEED_SP500)
+        if market == "US":
+            path, code_col, name_col, label = config.SEED_SP500, "Symbol", "Security", "S&P500(seed)"
+        elif market == "KR":
+            # 국내는 종목코드가 0으로 시작한다(005930). 문자열로 읽지 않으면 5930이 된다.
+            path, code_col, name_col, label = config.SEED_KRX, "code", "name", "KRX주요(seed)"
+        else:
+            raise SourceError(f"지원하지 않는 시장: {market}")
+        if not path.exists():
+            raise SourceError(f"번들 리스트 없음: {path.name}")
+
+        df = pd.read_csv(path, dtype=str)
         return pd.DataFrame(
             {
-                "code": df["Symbol"].astype(str).str.strip(),
-                "name": df["Security"].astype(str).str.strip(),
-                "market": "US",
-                "source_index": "S&P500(seed)",
+                "code": df[code_col].astype(str).str.strip(),
+                "name": df[name_col].astype(str).str.strip(),
+                "market": market,
+                "source_index": label,
             }
         ).drop_duplicates(subset="code").reset_index(drop=True)
 
