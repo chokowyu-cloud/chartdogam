@@ -1,4 +1,3 @@
-yaml
 name: collect & deploy
 
 # cron은 UTC 기준이다.
